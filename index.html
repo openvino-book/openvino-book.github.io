@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <title>线性代数 - 向量概念演示</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    canvas {
+      border: 1px solid #ccc;
+      background-color: white;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .input-group {
+      margin-top: 10px;
+      font-size: 16px;
+    }
+
+    .input-group input {
+      width: 60px;
+      margin: 0 5px;
+      font-size: 16px;
+    }
+
+    .info-panel {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+      width: 300px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      text-align: left;
+    }
+
+    .info-panel h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .info-panel p {
+      margin: 8px 0;
+      font-size: 15px;
+      color: #333;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>线性代数：向量概念演示</h1>
+  <p>输入任意二维向量 a 和 b，查看它们的加法动画</p>
+
+  <div class="container">
+    <!-- 左侧画布 -->
+    <div>
+      <div class="input-group">
+        向量 a = [<input type="number" id="aX" value="3">, <input type="number" id="aY" value="2">]
+        &nbsp;&nbsp;
+        向量 b = [<input type="number" id="bX" value="1">, <input type="number" id="bY" value="4">]
+      </div>
+      <canvas id="vectorCanvas" width="600" height="500"></canvas>
+    </div>
+
+    <!-- 右侧信息面板 -->
+    <div class="info-panel">
+      <h2>向量信息</h2>
+      <p><strong>向量 a 长度：</strong><span id="lenA">≈ 3.606</span></p>
+      <p><strong>向量 b 长度：</strong><span id="lenB">≈ 4.123</span></p>
+      <p><strong>a + b 长度：</strong><span id="lenSum">≈ 7.211</span></p>
+      <p><strong>向量夹角：</strong><span id="angle">≈ 52.14°</span></p>
+      <button onclick="playAnimation()">更新向量并播放动画</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('vectorCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let a = { x: 3, y: 2 };
+    let b = { x: 1, y: 4 };
+
+    function calculateScale(maxValue) {
+      return Math.min(250 / maxValue, 40);
+    }
+
+    let scale = 1;
+
+    function updateVectors() {
+      a.x = parseFloat(document.getElementById('aX').value);
+      a.y = parseFloat(document.getElementById('aY').value);
+      b.x = parseFloat(document.getElementById('bX').value);
+      b.y = parseFloat(document.getElementById('bY').value);
+
+      const maxVal = Math.max(
+        Math.abs(a.x), Math.abs(a.y),
+        Math.abs(b.x), Math.abs(b.y),
+        Math.abs(a.x + b.x), Math.abs(a.y + b.y)
+      );
+      scale = calculateScale(maxVal || 1);
+
+      updateLengthAndAngle();
+    }
+
+    function updateLengthAndAngle() {
+      const lenA = Math.sqrt(a.x * a.x + a.y * a.y);
+      const lenB = Math.sqrt(b.x * b.x + b.y * b.y);
+      const dotProduct = a.x * b.x + a.y * b.y;
+      const cosTheta = dotProduct / (lenA * lenB);
+      const angleRad = Math.acos(Math.max(-1, Math.min(1, cosTheta)));
+      const angleDeg = angleRad * (180 / Math.PI);
+
+      document.getElementById('lenA').textContent = `≈ ${lenA.toFixed(3)}`;
+      document.getElementById('lenB').textContent = `≈ ${lenB.toFixed(3)}`;
+      document.getElementById('lenSum').textContent = `≈ ${Math.sqrt((a.x + b.x)**2 + (a.y + b.y)**2).toFixed(3)}`;
+      document.getElementById('angle').textContent = `≈ ${angleDeg.toFixed(2)}°`;
+    }
+
+    const originX = canvas.width / 2;
+    const originY = canvas.height * 0.6;
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function drawGrid() {
+      ctx.strokeStyle = '#eee';
+      ctx.lineWidth = 1;
+
+      for (let x = 0; x < canvas.width; x += 20) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+
+      for (let y = 0; y < canvas.height; y += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawAxes() {
+      ctx.strokeStyle = '#999';
+      ctx.lineWidth = 2;
+
+      // X 轴
+      ctx.beginPath();
+      ctx.moveTo(0, originY);
+      ctx.lineTo(canvas.width, originY);
+      ctx.stroke();
+
+      // Y 轴
+      ctx.beginPath();
+      ctx.moveTo(originX, 0);
+      ctx.lineTo(originX, canvas.height);
+      ctx.stroke();
+
+      drawAxisLabels();
+    }
+
+    function drawAxisLabels() {
+      ctx.fillStyle = 'black';
+      ctx.font = '12px sans-serif';
+
+      const tickSize = 4;
+      const units = Math.floor(canvas.width / (scale * 5));
+      const step = Math.max(1, Math.pow(10, Math.floor(Math.log10(units))));
+
+      // X 轴标签
+      for (let i = -units; i <= units; i++) {
+        const px = originX + i * scale;
+        if (px >= 0 && px <= canvas.width) {
+          ctx.beginPath();
+          ctx.moveTo(px, originY - tickSize);
+          ctx.lineTo(px, originY + tickSize);
+          ctx.stroke();
+          ctx.fillText(i, px - 5, originY + 20);
+        }
+      }
+
+      // Y 轴标签
+      for (let i = -units; i <= units; i++) {
+        const py = originY - i * scale;
+        if (py >= 0 && py <= canvas.height) {
+          ctx.beginPath();
+          ctx.moveTo(originX - tickSize, py);
+          ctx.lineTo(originX + tickSize, py);
+          ctx.stroke();
+          ctx.fillText(-i, originX - 25, py + 4);
+        }
+      }
+    }
+
+    function drawVector(startX, startY, dx, dy, color = 'blue') {
+      const endX = startX + dx * scale;
+      const endY = startY - dy * scale;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      drawArrowHead(endX, endY, Math.atan2(-dy, dx), color);
+    }
+
+    function drawArrowHead(x, y, angle, color) {
+      const size = 6;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-size, size);
+      ctx.lineTo(-size, -size);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function drawLabel(x, y, label, offsetX = 0, offsetY = -10) {
+      ctx.fillStyle = 'black';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(label, originX + x * scale + offsetX, originY - y * scale + offsetY);
+    }
+
+    let step = 0;
+
+    function playAnimation() {
+      updateVectors();
+      step = 0;
+      animateStep();
+    }
+
+    function animateStep() {
+      clearCanvas();
+      drawGrid();
+      drawAxes();
+
+      if (step >= 0) {
+        drawVector(originX, originY, a.x, a.y, 'blue');
+        drawLabel(a.x, a.y, 'a', 5, 5);
+      }
+
+      if (step >= 1) {
+        drawVector(originX, originY, b.x, b.y, 'green');
+        drawLabel(b.x, b.y, 'b', 5, 5);
+      }
+
+      if (step >= 2) {
+        drawVector(originX + a.x * scale, originY - a.y * scale, b.x, b.y, 'green');
+      }
+
+      if (step >= 3) {
+        drawVector(originX, originY, a.x + b.x, a.y + b.y, 'red');
+        drawLabel(a.x + b.x, a.y + b.y, 'a + b', 5, 5);
+      }
+
+      step++;
+      if (step <= 3) {
+        setTimeout(animateStep, 1000);
+      }
+    }
+
+    // 初始化画面
+    playAnimation();
+  </script>
+</body>
+</html>
